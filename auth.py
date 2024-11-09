@@ -1,21 +1,21 @@
-# Task 2: Implement JWT Token Generation: First, ensure you have pyjwt installed by adding it to your requirements.txt:
+# Task 3: Authentication Logic: Create the auth.py file for managing authentication.
 
-# PyJWT==2.x.x
+from flask import Blueprint, request, jsonify
+from models import User, db
+from utils.util import encode_token
 
-# Now, create the utils/util.py file:
+auth_bp = Blueprint('auth_bp', __name__)
 
-import jwt
-import datetime
-
-SECRET_KEY = 'your_secret_key'  # Ensure this key is secure and not exposed
-
-def encode_token(user_id):
-    try:
-        payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),  # Token expiration: 1 day
-            'iat': datetime.datetime.utcnow(),
-            'sub': user_id
-        }
-        return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    except Exception as e:
-        return e
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user and user.check_password(password):
+        token = encode_token(user.id)
+        return jsonify({'token': token})
+    else:
+        return jsonify({'message': 'Invalid username or password'}), 401
